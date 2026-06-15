@@ -17,6 +17,7 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci
 
+# Copy public folder if it exists, and source files
 COPY frontend/public ./public
 COPY frontend/src ./src
 COPY frontend/angular.json .
