@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  chatbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbox-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - JAVA_OPTS=-Xmx2g -Xms1g
+    links:
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/chat/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatbox-ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  ollama_data:
+    driver: local
+
+# Usage:
+# 1. Build and start containers:
+#    docker-compose up -d --build
+#
+# 2. Pull a model into ollama:
+#    docker exec chatbox-ollama ollama pull llama2
+#
+# 3. Verify backends are working:
+#    curl http://localhost:8080/api/chat/health
+#    curl http://localhost:11434/api/status
+#
+# 4. Access the application:
+#    http://localhost:8080 (or http://<EC2_IP>:8080)
+#
+# 5. Stop containers:
+#    docker-compose down
+#
+# AWS EC2 Deployment Notes:
+# - Ensure security groups allow ports 8080 and 11434
+# - Allocate sufficient memory for Ollama models (~4-26GB depending on model)
+# - Use `docker-compose up -d --build` to start in background
+#
+# Models available:
+# - llama2 (default, ~4GB)
+# - mistral (~5GB)
+# - neural-chat (~5GB)
+# - dolphin-mixtral (~26GB)

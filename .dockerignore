@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.DS_Store
+.git
+.gitignore
+.idea
+target
+.env.example
+README.md
+QUICKSTART.md
+IMPLEMENTATION_SUMMARY.md
+.angular
+dist
+.vscode
+*.log

@@ -1,0 +1,37 @@
+# Build artifacts
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Dependencies
+node_modules/
+/dist
+/frontend/dist
+/frontend/node_modules
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log
+
+# Maven
+.m2/
+
+# Angular
+/frontend/.angular/cache
+
+# Test
+coverage/

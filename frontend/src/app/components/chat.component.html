@@ -1,0 +1,48 @@
+<div class="chat-container">
+  <div class="chat-header">
+    <h1>Chatbox with Local LLM</h1>
+    <div class="status-indicator">
+      <span class="status-dot" [ngClass]="connectionStatus"></span>
+      <span class="status-text">{{ connectionStatus }}</span>
+    </div>
+  </div>
+
+  <div class="messages-container">
+    <div *ngFor="let message of messages" 
+         [ngClass]="['message', message.sender === 'user' ? 'user-message' : 'bot-message']">
+      <div class="message-content">
+        <p class="message-text">{{ message.text }}</p>
+        <div *ngIf="message.apiData" class="api-data">
+          <small><strong>API Data:</strong></small>
+          <pre>{{ message.apiData }}</pre>
+        </div>
+        <small class="message-time">{{ message.timestamp | date:'short' }}</small>
+      </div>
+    </div>
+
+    <div *ngIf="isLoading" class="message bot-message">
+      <div class="message-content">
+        <p class="message-text loading">
+          <span></span><span></span><span></span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-container">
+    <textarea 
+      [(ngModel)]="inputMessage"
+      (keypress)="onKeyPress($event)"
+      placeholder="Ask me about weather or anything else..."
+      class="message-input"
+      [disabled]="isLoading">
+    </textarea>
+    <button 
+      (click)="sendMessage()" 
+      [disabled]="isLoading || !inputMessage.trim()"
+      class="send-button">
+      <span *ngIf="!isLoading">Send</span>
+      <span *ngIf="isLoading">Processing...</span>
+    </button>
+  </div>
+</div>
