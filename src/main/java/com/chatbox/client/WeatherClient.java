@@ -16,7 +16,7 @@ public class WeatherClient {
     @Value("${weather.api.key:demo}")
     private String apiKey;
     
-    @Value("${weather.api.url:https://api.openweathermap.org/data/2.5/weather}")
+    @Value("${weather.api.url:http://api.weatherapi.com/v1}")
     private String weatherApiUrl;
     
     private final RestTemplate restTemplate;
@@ -28,13 +28,15 @@ public class WeatherClient {
     public WeatherData getWeatherByCityName(String cityName) {
         try {
             String url = UriComponentsBuilder.fromHttpUrl(weatherApiUrl)
+                    .path("/current.json")
+                    .queryParam("key", apiKey)
                     .queryParam("q", cityName)
-                    .queryParam("appid", apiKey)
-                    .queryParam("units", "metric")
+                    .queryParam("aqi", "no")
                     .build()
                     .toUriString();
             
             logger.info("Fetching weather for city: {}", cityName);
+            logger.debug("URL: {}", url);
             WeatherData weather = restTemplate.getForObject(url, WeatherData.class);
             logger.info("Weather fetched successfully for: {}", cityName);
             return weather;
@@ -50,16 +52,22 @@ public class WeatherClient {
         }
         
         StringBuilder sb = new StringBuilder();
-        sb.append("City: ").append(weather.getCityName()).append("\n");
+        String cityName = weather.getCityName();
+        sb.append("City: ").append(cityName != null ? cityName : "Unknown").append("\n");
         
         if (weather.getMain() != null) {
-            sb.append("Temperature: ").append(weather.getMain().getTemp()).append("°C\n");
-            sb.append("Humidity: ").append(weather.getMain().getHumidity()).append("%\n");
-            sb.append("Pressure: ").append(weather.getMain().getPressure()).append(" hPa\n");
+            Double temp = weather.getMain().getTemp();
+            Integer humidity = weather.getMain().getHumidity();
+            Double pressure = weather.getMain().getPressure();
+            
+            if (temp != null) sb.append("Temperature: ").append(temp).append("°C\n");
+            if (humidity != null) sb.append("Humidity: ").append(humidity).append("%\n");
+            if (pressure != null) sb.append("Pressure: ").append(pressure).append(" mb\n");
         }
         
         if (weather.getWind() != null) {
-            sb.append("Wind Speed: ").append(weather.getWind().getSpeed()).append(" m/s\n");
+            Double speed = weather.getWind().getSpeed();
+            if (speed != null) sb.append("Wind Speed: ").append(String.format("%.2f", speed)).append(" m/s\n");
         }
         
         if (weather.getWeather() != null && !weather.getWeather().isEmpty()) {
