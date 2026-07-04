@@ -1,22 +1,21 @@
 package com.chatbox.service;
 
-import com.chatbox.client.WeatherClient;
 import com.chatbox.model.ChatResponse;
-import com.chatbox.model.WeatherData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 
 @Service
 public class ChatService {
     
     private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
-    private final WeatherClient weatherClient;
+    private final RestTemplate restTemplate;
     private final OllamaService ollamaService;
 
-    public ChatService(WeatherClient weatherClient, OllamaService ollamaService) {
-        this.weatherClient = weatherClient;
+    public ChatService(RestTemplate restTemplate, OllamaService ollamaService) {
+        this.restTemplate = restTemplate;
         this.ollamaService = ollamaService;
     }
 
@@ -31,8 +30,7 @@ public class ChatService {
                 String city = extractCityName(userMessage);
                 if (city != null && !city.isEmpty()) {
                     logger.info("Weather query detected for city: {}", city);
-                    WeatherData weatherData = weatherClient.getWeatherByCityName(city);
-                    apiData = weatherClient.formatWeatherData(weatherData);
+                    apiData = fetchWeatherFromController(city);
                     logger.info("Weather data retrieved: {}", apiData);
                 }
             }
@@ -103,5 +101,18 @@ public class ChatService {
             "Based on the above data, please provide a helpful response in clear English.",
             userMessage, apiData
         );
+    }
+
+    private String fetchWeatherFromController(String city) {
+        try {
+            String url = String.format("http://localhost:8080/api/weather/formatted?city=%s", 
+                    java.net.URLEncoder.encode(city, "UTF-8"));
+            logger.debug("Calling weather controller: {}", url);
+            String weatherData = restTemplate.getForObject(url, String.class);
+            return weatherData != null ? weatherData : "";
+        } catch (Exception e) {
+            logger.error("Error calling weather controller for city: {}", city, e);
+            return "";
+        }
     }
 }
