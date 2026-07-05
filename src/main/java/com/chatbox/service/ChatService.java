@@ -25,8 +25,15 @@ public class ChatService {
             
             String apiData = "";
             
+            // Check if message contains currency-related keywords
+            if (containsCurrencyKeywords(userMessage)) {
+                String currencyId = extractCurrencyId(userMessage);
+                logger.info("Currency query detected");
+                apiData = fetchCurrencyFromController(currencyId);
+                logger.info("Currency data retrieved: {}", apiData);
+            }
             // Check if message contains weather-related keywords
-            if (containsWeatherKeywords(userMessage)) {
+            else if (containsWeatherKeywords(userMessage)) {
                 String city = extractCityName(userMessage);
                 if (city != null && !city.isEmpty()) {
                     logger.info("Weather query detected for city: {}", city);
@@ -72,6 +79,21 @@ public class ChatService {
                lowerMessage.contains("cold");
     }
 
+    private boolean containsCurrencyKeywords(String message) {
+        String lowerMessage = message.toLowerCase();
+        return lowerMessage.contains("currency") || 
+               lowerMessage.contains("currencies") ||
+               lowerMessage.contains("coin") ||
+               lowerMessage.contains("exchange") ||
+               lowerMessage.contains("usd") ||
+               lowerMessage.contains("eur") ||
+               lowerMessage.contains("gbp") ||
+               lowerMessage.contains("jpy") ||
+               lowerMessage.contains("forex") ||
+               lowerMessage.contains("usd price") ||
+               lowerMessage.contains("eur price");
+    }
+
     private String extractCityName(String message) {
         // Simple extraction - looks for "in <city>" pattern
         String lowerMessage = message.toLowerCase();
@@ -84,6 +106,23 @@ public class ChatService {
             String[] words = afterIn.split("[\\s.,?!]");
             if (words.length > 0 && !words[0].isEmpty()) {
                 return words[0];
+            }
+        }
+        
+        return null;
+    }
+
+    private String extractCurrencyId(String message) {
+        String upperMessage = message.toUpperCase();
+        
+        // Look for 3-letter currency codes (e.g., USD, EUR, GBP, JPY)
+        // Common patterns: "USD", "EUR", "GBP", "JPY", etc.
+        if (upperMessage.matches(".*\\b[A-Z]{3}\\b.*")) {
+            String[] words = upperMessage.split("[^A-Z]");
+            for (String word : words) {
+                if (word.length() == 3 && word.matches("[A-Z]{3}")) {
+                    return word;
+                }
             }
         }
         
@@ -112,6 +151,28 @@ public class ChatService {
             return weatherData != null ? weatherData : "";
         } catch (Exception e) {
             logger.error("Error calling weather controller for city: {}", city, e);
+            return "";
+        }
+    }
+
+    private String fetchCurrencyFromController(String currencyId) {
+        try {
+            String url;
+            
+            // If currency ID is provided, fetch specific currency; otherwise fetch all
+            if (currencyId != null && !currencyId.isEmpty()) {
+                url = String.format("http://localhost:8080/api/currency/%s/formatted", 
+                        java.net.URLEncoder.encode(currencyId, "UTF-8"));
+                logger.debug("Calling currency controller for specific currency: {}", url);
+            } else {
+                url = "http://localhost:8080/api/currency/all/formatted";
+                logger.debug("Calling currency controller for all currencies: {}", url);
+            }
+            
+            String currencyData = restTemplate.getForObject(url, String.class);
+            return currencyData != null ? currencyData : "";
+        } catch (Exception e) {
+            logger.error("Error calling currency controller", e);
             return "";
         }
     }
